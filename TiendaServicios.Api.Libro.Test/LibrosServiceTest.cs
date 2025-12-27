@@ -103,7 +103,7 @@ namespace TiendaServicios.Api.Libro.Test
         [Fact]
         public async void GuardarLibro()
         {
-            System.Diagnostics.Debugger.Launch();
+            //Este test no usa moq, usa una BD en memoria
 
             var options = new DbContextOptionsBuilder<ContextoLibreria>()
                 .UseInMemoryDatabase(databaseName: "BaseDatosLibro")
