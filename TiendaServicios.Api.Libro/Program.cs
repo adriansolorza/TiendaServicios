@@ -17,7 +17,7 @@ builder.Services.AddAutoMapper(typeof(Consulta.Ejecuta));
 
 builder.Services.AddDbContext<ContextoLibreria>(options => 
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("ConexionDB"));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("ConexionDatabase"));
 });
 
 var app = builder.Build();

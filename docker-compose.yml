@@ -1,18 +1,97 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:16
-    container_name: postgres
+    container_name: postgres-docker
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: N0_T13n3
-      POSTGRES_DB: tiendalibroautor
+
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-docker
+    restart: unless-stopped
+    ports:
+      - "${SQLSERVER_PORT}:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: ${SQLSERVER_SA_PASSWORD}
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-carrito-docker
+    restart: unless-stopped
+    ports:
+      - "${MYSQL_PORT}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_carrito_data:/var/lib/mysql
+
+
+  autor.api:
+    build:
+      context: .
+      dockerfile: TiendaServicios.Api.Autor/Dockerfile
+    container_name: autor-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__ConexionDatabase: Host=postgres;Port=5432;Database=tiendalibroautor;Username=appuser;Password=apppassword
+    ports:
+      - "5001:8080"
+    depends_on:
+      - postgres
+
+  libro.api:
+    build:
+      context: .
+      dockerfile: TiendaServicios.Api.Libro/Dockerfile
+    container_name: libro-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__ConexionDatabase: Server=sqlserver,1433;Database=tiendalibro;User Id=sa;Password=${SQLSERVER_SA_PASSWORD};TrustServerCertificate=True
+      AutorService__Url: http://autor-api:8080
+    ports:
+      - "5002:8080"
+    depends_on:
+      - sqlserver
+
+  carrito.api:
+    build:
+      context: .
+      dockerfile: TiendaServicios.Api.CarritoCompra/Dockerfile
+    container_name: carrito-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__ConexionDatabase: Server=mysql;Port=3306;Database=carritodb;User=appuser;Password=apppassword
+      AutorService__Url: http://autor-api:8080
+      LibroService__Url: http://libro-api:8080
+    ports:
+      - "5003:8080"
+    depends_on:
+      - mysql
+      - autor.api
+      - libro.api
+
+
+
 volumes:
   postgres_data:
+  sqlserver_data:
+  mysql_carrito_data:
+
+
